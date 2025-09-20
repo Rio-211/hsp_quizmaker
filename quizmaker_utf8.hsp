@@ -1,0 +1,87 @@
+#packopt name "QPlay"
+#define W 640
+#define H 480
+#const MX 64
+screen 0,W,H:font "",18:randomize
+
+sdim B,65535
+sdim Q,256,MX
+sdim C,128,MX,4
+sdim L,4096
+sdim T,521,64
+dim ANS,MX
+dim O,MX
+
+n=0:s=0:k=0:sel=0:qi=0
+
+*edit
+    clrobj:notesel boxf
+    redraw 0:gosub *clr
+    pos 10,10:mes "書き方\n問題 Tab 選1 Tab 選2 Tab 選3 Tab 選4 Tab 正解(1-4)\n選1は1つ目の選択肢、正解(1-4)は正解の選択肢の番号を書こう\n\n例\n    日本の首都は?   東京    大阪    名古屋  札幌    1"
+    pos 520,30:button "PLAY",*go
+    pos 10,150:mesbox  B,W-20,H-150,1:objsel stat
+    redraw 1:stop
+*go
+    notesel B:n=0
+    repeat notemax
+        noteget L,cnt
+        if L!="" {
+            if instr(L,0,"\r")>=0:split L,"\r",U:L=U(0)
+            split L,"\t",T
+            if stat>=6 {
+                Q(n)=T(0)
+                C(n,0)=T(1):C(n,1)=T(2):C(n,2)=T(3):C(n,3)=T(4)
+                an=T(5)
+                repeat
+                    if strlen(an)<=0:break
+                    cc=strmid(an,strlen(an)-1,1)
+                    if (cc=" ")|(cc="\t")|(cc="\r")|(cc="\n"){ an=strmid(an,0,strlen(an)-1) : continue }
+                    break
+                loop
+                a0=int(an):if a0<1:a0=1:if a0>4:a0=4
+                ANS(n)=a0
+                n++:if n>=MX:break
+            }
+        }
+    loop
+    if n=0:dialog "問題がみつかりません",1:goto *edit
+    repeat n:O(cnt)=cnt:loop
+    repeat n:i=cnt:r=rnd(n):t=O(i):O(i)=O(r):O(r)=t:loop
+    s=0:k=0:goto *play
+
+*play
+    clrobj:redraw 0:gosub *clr
+    if s>=n:goto *fin
+    qi=O(s)
+    sel=0
+    pos 10,10:mes (s+1)+"/"+n
+    pos 10,50:mes "Q. "+Q(qi)
+    pos 40,120:button "1) "+C(qi,0),*b1
+    pos 40,170:button "2) "+C(qi,1),*b2
+    pos 40,220:button "3) "+C(qi,2),*b3
+    pos 40,270:button "4) "+C(qi,3),*b4
+    pos 40,330:mes "得点:"+k
+    redraw 1:stop
+*b1:sel=1:goto *chk
+*b2:sel=2:goto *chk
+*b3:sel=3:goto *chk
+*b4:sel=4:goto *chk
+
+*chk
+    if (qi<0)|(qi>=n):goto *play
+    idx=ANS(qi)-1:if idx<0:idx=0:if idx>3:idx=3
+    if sel=ANS(qi){
+        k++:dialog "せいかい!",1
+    }else{
+        dialog "ざんねん...正解は"+ANS(qi)+") "+C(qi,idx),1
+    }
+    s++:goto *play
+
+*fin
+    clrobj:redraw 0,gosub *clr
+    pos 10,10:mes "けっか:"+k+" / "+n
+    pos 10,60:button "終了",*bye
+    redraw 1:stop
+*bye:end
+*clr
+    color 255,255,255:boxf:color 0,0,0:return
